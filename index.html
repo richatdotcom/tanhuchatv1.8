@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TANHUTOWN - Terminal OS</title>
+    <title>TANHUTOWN - Immortal Tanhu OS</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     
@@ -17,11 +17,7 @@
             background-attachment: fixed;
         }
 
-        /* Arka plan katmanı - net, hafif karartmalı */
-        #overlay { 
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
-            background: rgba(0, 0, 0, 0.4); z-index: 1; 
-        }
+        #overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.4); z-index: 1; }
 
         #terminal { 
             width: 98vw; max-width: 1100px; height: 90vh; 
@@ -34,42 +30,32 @@
 
         #main-content { display: flex; flex: 1; overflow: hidden; }
 
-        /* Sol Sidebar (Kullanıcı Listesi) */
+        /* Sol Sidebar */
         #user-sidebar { width: 220px; border-right: 1px solid #008f11; display: flex; flex-direction: column; background: rgba(0,0,0,0.4); }
         #sidebar-header { padding: 12px; font-size: 0.75em; border-bottom: 1px solid #008f11; color: #00ff41; letter-spacing: 1px; }
         #user-list { flex: 1; overflow-y: auto; padding: 10px; list-style: none; margin: 0; font-size: 0.85em; }
         
-        .user-item { 
-            margin-bottom: 5px; padding: 5px; display: flex; align-items: center; gap: 8px; 
-            cursor: default; transition: background 0.2s; border-radius: 3px;
-        }
+        .user-item { margin-bottom: 5px; padding: 5px; display: flex; align-items: center; gap: 8px; cursor: default; transition: background 0.2s; border-radius: 3px; }
         .user-item:hover { background: rgba(0, 255, 65, 0.1); }
         
         .status-dot { width: 7px; height: 7px; border-radius: 50%; }
         .online { background: #00ff41; box-shadow: 0 0 5px #00ff41; }
         .offline { background: #444; }
 
-        /* Tanhu Sağ Tık Menüsü */
-        #admin-context-menu {
-            display: none; position: fixed; background: #0d0d0d; border: 1px solid #ff0000;
-            z-index: 1000; width: 180px; box-shadow: 5px 5px 15px rgba(0,0,0,0.8);
-        }
-        .context-item {
-            padding: 10px; color: #ff0000; font-size: 0.8em; cursor: pointer; font-weight: bold;
-        }
+        /* Admin Menü */
+        #admin-context-menu { display: none; position: fixed; background: #0d0d0d; border: 1px solid #ff0000; z-index: 1000; width: 180px; box-shadow: 5px 5px 15px rgba(0,0,0,0.8); }
+        .context-item { padding: 10px; color: #ff0000; font-size: 0.8em; cursor: pointer; font-weight: bold; }
         .context-item:hover { background: #ff0000; color: white; }
 
-        /* Sağ Chat Alanı */
+        /* Chat Alanı */
         #chat-area { flex: 1; display: flex; flex-direction: column; padding: 15px; }
-        
         #channel-bar { display: flex; gap: 10px; margin-bottom: 15px; border-bottom: 1px solid #008f11; padding-bottom: 10px; align-items: center; }
         .channel-btn { padding: 5px 12px; border: 1px solid #00ff41; cursor: pointer; font-size: 0.8em; color: #00ff41; background: transparent; }
         .channel-btn.active { background: #00ff41; color: black; }
-        
         #logout-btn { background: #550000; color: white; border: 1px solid #ff0000; padding: 4px 8px; font-size: 0.6em; cursor: pointer; margin-left: auto; }
 
         #messages { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; margin-bottom: 15px; padding: 10px; background: rgba(0,0,0,0.4); border: 1px solid rgba(0,255,65,0.1); }
-        .log-line { line-height: 1.4; font-size: 0.85em; text-shadow: 1px 1px 2px black; }
+        .log-line { line-height: 1.4; font-size: 0.85em; }
         .timestamp { color: #00ff41; opacity: 0.6; margin-right: 5px; }
         .msg-user { font-weight: bold; color: #fff; }
 
@@ -77,7 +63,7 @@
         #message-input { flex: 1; background: transparent; border: none; color: #00ff41; font-family: 'Fira Code', monospace; outline: none; font-size: 0.95em; }
         #send-btn { background: #00ff41; color: black; border: none; padding: 8px 20px; cursor: pointer; font-weight: bold; }
 
-        /* Giriş & Ban */
+        /* Ekranlar */
         #login-screen, #ban-screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #000; display: flex; justify-content: center; align-items: center; z-index: 100; flex-direction: column; text-align: center; }
         .login-box { border: 2px solid #00ff41; padding: 40px; background: #0d0d0d; box-shadow: 0 0 20px #00ff41; }
     </style>
@@ -85,45 +71,32 @@
 <body>
 
 <div id="overlay"></div>
-
-<div id="admin-context-menu">
-    <div class="context-item" id="ctx-ban-btn">BİRİMİ MÜHÜRLE (BAN)</div>
-</div>
+<div id="admin-context-menu"><div class="context-item" id="ctx-ban-btn">BİRİMİ MÜHÜRLE (BAN)</div></div>
 
 <div id="terminal">
-    <div id="ban-screen"><h1>[ SİSTEMDEN MENEDİLDİNİZ ]</h1><p>Cihaz kimliğiniz kara listeye alındı.</p></div>
-    
+    <div id="ban-screen"><h1>[ SİSTEMDEN MENEDİLDİNİZ ]</h1><p>Kara liste kaydı bulundu.</p></div>
     <div id="login-screen">
         <div class="login-box">
-            <p>> TANHUTOWN_OS v4.6</p>
-            <p style="font-size: 0.8em; margin-top: 20px;">RUMUZ GİRİN:</p>
-            <input type="text" id="username-input" style="background:transparent; border:none; border-bottom:1px solid #00ff41; color:#00ff41; outline:none; text-align:center; width: 100%;" autofocus autocomplete="off">
-            <p style="font-size: 0.6em; margin-top: 20px; opacity: 0.5;">[DEVAM ETMEK İÇİN ENTER]</p>
+            <p>> TANHUTOWN_OS v4.7</p>
+            <input type="text" id="username-input" style="background:transparent; border:none; border-bottom:1px solid #00ff41; color:#00ff41; outline:none; text-align:center; width: 100%; margin-top:20px;" autofocus autocomplete="off">
+            <p style="font-size: 0.6em; margin-top: 20px; opacity: 0.5;">[GİRİŞ: ENTER]</p>
         </div>
     </div>
 
     <div id="main-content">
-        <aside id="user-sidebar">
-            <div id="sidebar-header">> KAYITLI_BIRIMLER</div>
-            <ul id="user-list"></ul>
-        </aside>
-
+        <aside id="user-sidebar"><div id="sidebar-header">> KAYITLI_BIRIMLER</div><ul id="user-list"></ul></aside>
         <section id="chat-area">
             <div id="channel-bar">
                 <button id="btn-lobi" class="channel-btn active" onclick="switchChannel('lobi')">[ LOBİ ]</button>
                 <button id="btn-lord" class="channel-btn" onclick="switchChannel('lord')">[ LORD'UN SALONU ]</button>
-                <label id="admin-wallpaper-btn" for="wallpaper-input" style="display:none; cursor:pointer; font-size: 0.6em; border:1px solid #ff0055; padding: 4px; color:#ff0055; margin-left: 10px;">GÖRSELİ GÜNCELLE</label>
+                <label id="admin-wallpaper-btn" for="wallpaper-input" style="display:none; cursor:pointer; font-size: 0.6em; border:1px solid #ff0055; padding: 4px; color:#ff0055; margin-left: 10px;">SET_BG</label>
                 <input type="file" id="wallpaper-input" accept="image/*" style="display:none;">
                 <button id="logout-btn" onclick="logout()">BAĞLANTIYI KES</button>
             </div>
-
             <div id="messages"></div>
-
             <div id="input-line">
                 <span id="prompt-label" style="font-size: 0.8em; font-weight: bold;">user@town:~$</span>
-                <input type="text" id="message-input" autocomplete="off" placeholder="Mesajınızı iletin...">
-                <label for="file-input" style="cursor:pointer; color:#00ff41; border:1px solid #00ff41; padding: 5px; font-size: 0.8em;">FOTO</label>
-                <input type="file" id="file-input" accept="image/*" style="display:none;">
+                <input type="text" id="message-input" autocomplete="off">
                 <button id="send-btn" onclick="sendMessage()">İLET</button>
             </div>
         </section>
@@ -131,12 +104,10 @@
 </div>
 
 <script>
-    // Firebase Yapılandırması
     const firebaseConfig = { databaseURL: "https://texttanhu-default-rtdb.firebaseio.com/" };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    // HWID (Cihaz Kimliği) Oluşturma
     let deviceId = localStorage.getItem('tanhutown_device_id') || 'DEV-' + Math.random().toString(36).substr(2, 9).toUpperCase();
     localStorage.setItem('tanhutown_device_id', deviceId);
 
@@ -144,41 +115,32 @@
     let currentUser = localStorage.getItem('chatUser');
     let isAdmin = false;
 
-    // Presence (Çevrim içi takibi)
     function updatePresence(name, status) {
         if (!name) return;
         const ref = db.ref('users/' + name);
         if (status === 'online') {
             ref.update({ status: 'online', lastDev: deviceId });
             ref.onDisconnect().update({ status: 'offline' });
-        } else {
-            ref.update({ status: 'offline' });
-        }
+        } else ref.update({ status: 'offline' });
     }
 
-    // Sidebar Kullanıcı Listesi ve Sağ Tık
     function listenUserList() {
         db.ref('users').on('value', (snapshot) => {
             const list = document.getElementById('user-list');
             list.innerHTML = '';
             const users = snapshot.val();
             for (let name in users) {
-                const isOnline = users[name].status === 'online';
                 const li = document.createElement('li');
                 li.className = 'user-item';
-                li.innerHTML = `<span class="status-dot ${isOnline ? 'online' : 'offline'}"></span> <span>${name}</span>`;
-                
+                li.innerHTML = `<span class="status-dot ${users[name].status === 'online' ? 'online' : 'offline'}"></span> <span>${name}</span>`;
                 li.oncontextmenu = (e) => {
                     if (isAdmin && name.toUpperCase() !== "TANHU") {
                         e.preventDefault();
                         const menu = document.getElementById('admin-context-menu');
                         menu.style.display = 'block';
-                        menu.style.left = e.pageX + 'px';
-                        menu.style.top = e.pageY + 'px';
+                        menu.style.left = e.pageX + 'px'; menu.style.top = e.pageY + 'px';
                         document.getElementById('ctx-ban-btn').onclick = () => {
-                            if (confirm(`TANHU YETKİSİ: ${name} birimini banlamak istiyor musun?`)) {
-                                db.ref('banned_devices/' + users[name].lastDev).set({ user: name, date: Date.now() });
-                            }
+                            if (confirm(`${name} birimini banla?`)) db.ref('banned_devices/' + users[name].lastDev).set({ user: name, date: Date.now() });
                             menu.style.display = 'none';
                         };
                     }
@@ -188,50 +150,43 @@
         });
     }
 
-    // Lord Salonu Arka Plan Takibi
-    function listenWallpaper() {
+    // Ban kontrolü (Artık Tanhu'ya muafiyet sağlıyor)
+    function checkBan(name) {
+        if (name && name.toUpperCase() === "TANHU") {
+            startApp(); // Tanhu ise direkt başlat
+            return;
+        }
+        db.ref('banned_devices/' + deviceId).once('value', (s) => {
+            if (s.exists()) document.getElementById('ban-screen').style.display = 'flex';
+            else if (name) startApp();
+        });
+    }
+
+    if (currentUser) checkBan(currentUser);
+
+    function startApp() {
+        document.getElementById('login-screen').style.display = 'none';
+        document.getElementById('ban-screen').style.display = 'none'; // Yanlışlıkla banlandıysa ekranı temizle
+        isAdmin = (currentUser.toUpperCase() === "TANHU");
+        document.getElementById('prompt-label').textContent = `${currentUser.toLowerCase()}@town:~$`;
+        updatePresence(currentUser, 'online');
+        listenUserList();
+        loadMessages();
         db.ref('settings/lord_wallpaper').on('value', (s) => {
             document.body.style.backgroundImage = (currentRoom === 'lord' && s.exists()) ? `url(${s.val()})` : "none";
         });
     }
 
-    if (currentUser) {
-        db.ref('banned_devices/' + deviceId).once('value', (s) => {
-            if (s.exists()) document.getElementById('ban-screen').style.display = 'flex';
-            else startApp();
-        });
-    }
-
-    function startApp() {
-        document.getElementById('login-screen').style.display = 'none';
-        isAdmin = (currentUser.toUpperCase() === "TANHU");
-        document.getElementById('prompt-label').textContent = `${currentUser.toLowerCase()}@town:~$`;
-        updatePresence(currentUser, 'online');
-        listenUserList();
-        listenWallpaper();
-        loadMessages();
-    }
-
-    function logout() {
-        if(confirm("Bağlantı kesilsin mi?")) {
-            updatePresence(currentUser, 'offline');
-            localStorage.removeItem('chatUser');
-            location.reload();
-        }
-    }
-
     function switchChannel(room) {
         if (room === 'lord' && !isAdmin) {
-            if (prompt("LORDUN SALONU ŞİFRESİ:") !== "80085") return alert("YETKİSİZ ERİŞİM!");
+            if (prompt("ŞİFRE:") !== "80085") return alert("YETKİSİZ!");
         }
         currentRoom = room;
         document.getElementById('admin-wallpaper-btn').style.display = (isAdmin && room === 'lord') ? 'block' : 'none';
-        document.getElementById('messages').innerHTML = `<p style="color:#00ff41">> BAĞLANTI KURULDU: ${room.toUpperCase()}</p>`;
         document.querySelectorAll('.channel-btn').forEach(b => b.classList.remove('active'));
         document.getElementById(`btn-${room}`).classList.add('active');
         document.getElementById('prompt-label').textContent = `${currentUser.toLowerCase()}@${room}:~$`;
         db.ref(currentRoom).off();
-        listenWallpaper();
         loadMessages();
     }
 
@@ -248,11 +203,7 @@
             const data = s.val();
             const div = document.createElement('div');
             div.className = 'log-line';
-            const time = new Date(data.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-            let html = `<span class="timestamp">[${time}]</span> <span class="msg-user">${data.gonderen}</span>: `;
-            if(data.foto) html += `<br><img src="${data.foto}" style="max-width:250px; border:1px solid #00ff41; margin:5px 0;">`;
-            else html += `<span>${data.mesaj}</span>`;
-            div.innerHTML = html;
+            div.innerHTML = `<span class="timestamp">[${new Date(data.timestamp).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}]</span> <b style="${data.gonderen.toUpperCase()==='TANHU' ? 'color:#4ecca3' : ''}">${data.gonderen}</b>: ${data.mesaj}`;
             document.getElementById('messages').appendChild(div);
             document.getElementById('messages').scrollTop = document.getElementById('messages').scrollHeight;
         });
@@ -261,26 +212,19 @@
     document.getElementById('username-input').onkeypress = (e) => {
         if (e.key === 'Enter') {
             let name = e.target.value.trim();
-            if (name.toUpperCase() === "TANHU" && prompt("ADMIN_PASS:") !== "3169") return alert("ERİŞİM REDDEDİLDİ");
-            if (name) { currentUser = name; localStorage.setItem('chatUser', name); startApp(); }
+            if (name.toUpperCase() === "TANHU" && prompt("ŞİFRE:") !== "3169") return alert("HATA");
+            currentUser = name; localStorage.setItem('chatUser', name);
+            checkBan(name);
         }
     };
-    
-    document.getElementById('wallpaper-input').onchange = (e) => {
-        const file = e.target.files[0];
-        const reader = new FileReader();
-        reader.onload = (event) => db.ref('settings/lord_wallpaper').set(event.target.result);
-        reader.readAsDataURL(file);
-    };
-
-    document.getElementById('file-input').onchange = (e) => {
-        const file = e.target.files[0];
-        const reader = new FileReader();
-        reader.onload = (event) => db.ref(currentRoom).push({ gonderen: currentUser, foto: event.target.result, devId: deviceId, timestamp: firebase.database.ServerValue.TIMESTAMP });
-        reader.readAsDataURL(file);
-    };
-
+    function logout() { updatePresence(currentUser, 'offline'); localStorage.removeItem('chatUser'); location.reload(); }
     window.onclick = () => document.getElementById('admin-context-menu').style.display = 'none';
+    document.getElementById('message-input').onkeypress = (e) => { if (e.key === 'Enter') sendMessage(); };
+    document.getElementById('wallpaper-input').onchange = (e) => {
+        const reader = new FileReader();
+        reader.onload = (ev) => db.ref('settings/lord_wallpaper').set(ev.target.result);
+        reader.readAsDataURL(e.target.files[0]);
+    };
 </script>
 </body>
 </html>
