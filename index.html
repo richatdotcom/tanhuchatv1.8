@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TANHUTOWN - Fix OS</title>
+    <title>TANHUTOWN - Purge OS</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     
@@ -29,13 +29,16 @@
         .context-item { padding: 12px; font-size: 0.75em; cursor: pointer; font-weight: bold; border-bottom: 1px solid #1a1a1a; }
         .item-ban { color: #ff0000; } .item-ban:hover { background: #ff0000; color: white; }
         .item-delete { color: #ffaa00; } .item-delete:hover { background: #ffaa00; color: black; }
+        .item-msg-del { color: #00ccff; } .item-msg-del:hover { background: #00ccff; color: black; }
         #chat-area { flex: 1; display: flex; flex-direction: column; padding: 15px; }
         #messages { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; margin-bottom: 15px; padding: 10px; background: rgba(0,0,0,0.4); border: 1px solid rgba(0,255,65,0.1); }
-        .log-line { line-height: 1.4; font-size: 0.85em; }
+        .log-line { line-height: 1.4; font-size: 0.85em; transition: opacity 0.3s; }
         #input-line { display: flex; align-items: center; gap: 10px; border-top: 1px solid #008f11; padding-top: 10px; }
         #message-input { flex: 1; background: transparent; border: none; color: #00ff41; font-family: 'Fira Code', monospace; outline: none; }
         #send-btn { background: #00ff41; color: black; border: none; padding: 8px 20px; cursor: pointer; font-weight: bold; }
         #login-screen, #ban-screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #000; display: flex; justify-content: center; align-items: center; z-index: 100; flex-direction: column; }
+        .channel-btn { padding: 5px 12px; border: 1px solid #00ff41; cursor: pointer; font-size: 0.7em; color: #00ff41; background: transparent; }
+        .channel-btn.active { background: #00ff41; color: black; }
     </style>
 </head>
 <body>
@@ -43,16 +46,16 @@
 <div id="overlay"></div>
 
 <div id="admin-context-menu">
-    <div class="context-item item-ban" id="ctx-ban-btn">BİRİMİ MÜHÜRLE (BAN)</div>
-    <div class="context-item item-delete" id="ctx-del-btn">VERİLERİ SİL (WIPE)</div>
+    <div class="context-item item-ban" id="ctx-ban-btn" style="display:none;">BİRİMİ MÜHÜRLE (BAN)</div>
+    <div class="context-item item-delete" id="ctx-del-btn" style="display:none;">VERİLERİ SİL (WIPE)</div>
+    <div class="context-item item-msg-del" id="ctx-msg-del-btn" style="display:none;">MESAJI İMHA ET (DELETE)</div>
 </div>
 
 <div id="terminal">
     <div id="ban-screen"><h1>[ ERİŞİM ENGELLENDİ ]</h1><p>Bu cihaz mühürlenmiştir.</p></div>
-    
     <div id="login-screen">
         <div style="border: 1px solid #00ff41; padding: 40px; background: #0d0d0d; text-align: center;">
-            <p>> TANHUTOWN_OS v5.1</p>
+            <p>> TANHUTOWN_OS v5.3</p>
             <input type="text" id="username-input" placeholder="Rumuz girin..." style="background:transparent; border:none; border-bottom:1px solid #00ff41; color:#00ff41; outline:none; text-align:center; width: 100%; margin-top:20px;" autofocus>
         </div>
     </div>
@@ -68,12 +71,18 @@
         </aside>
 
         <section id="chat-area">
-            <div style="display:flex; justify-content: space-between; border-bottom:1px solid #008f11; padding-bottom:5px; margin-bottom:10px; font-size:0.75em;">
-                <span id="prompt-label">user@town:~$</span>
-                <span onclick="logout()" style="cursor:pointer; color:#ff0000;">[LOGOUT]</span>
+            <div style="display:flex; justify-content: space-between; border-bottom:1px solid #008f11; padding-bottom:10px; margin-bottom:10px;">
+                <div style="display:flex; gap:10px;">
+                    <button id="btn-lobi" class="channel-btn active" onclick="switchChannel('lobi')">[ LOBİ ]</button>
+                    <button id="btn-lord" class="channel-btn" onclick="switchChannel('lord')">[ LORD'UN SALONU ]</button>
+                    <label id="admin-wallpaper-btn" for="wallpaper-input" style="display:none; cursor:pointer; font-size: 0.6em; border:1px solid #ff0055; padding: 4px; color:#ff0055;">GÖRSEL GÜNCELLE</label>
+                    <input type="file" id="wallpaper-input" accept="image/*" style="display:none;">
+                </div>
+                <span onclick="logout()" style="cursor:pointer; color:#ff0000; font-size: 0.75em;">[LOGOUT]</span>
             </div>
             <div id="messages"></div>
             <div id="input-line">
+                <span id="prompt-label" style="font-size: 0.8em; white-space: nowrap;">user@town:~$</span>
                 <input type="text" id="message-input" autocomplete="off">
                 <button id="send-btn" onclick="sendMessage()">İLET</button>
             </div>
@@ -89,19 +98,9 @@
     let deviceId = localStorage.getItem('tanhutown_device_id') || 'DEV-' + Math.random().toString(36).substr(2, 9).toUpperCase();
     localStorage.setItem('tanhutown_device_id', deviceId);
 
+    let currentRoom = 'lobi';
     let currentUser = localStorage.getItem('chatUser');
     let isAdmin = false;
-
-    // OTOMATİK VERİ KONTROLÜ
-    function checkUserStillExists() {
-        if (!currentUser || currentUser.toUpperCase() === "TANHU") return;
-        db.ref('users/' + currentUser).on('value', (s) => {
-            if (!s.exists()) {
-                localStorage.removeItem('chatUser');
-                location.reload();
-            }
-        });
-    }
 
     function updatePresence(name, status) {
         if (!name) return;
@@ -116,8 +115,7 @@
         db.ref().on('value', (snapshot) => {
             const userListElem = document.getElementById('user-list');
             const bannedListElem = document.getElementById('banned-list');
-            userListElem.innerHTML = '';
-            bannedListElem.innerHTML = '';
+            userListElem.innerHTML = ''; bannedListElem.innerHTML = '';
             
             const users = snapshot.child('users').val() || {};
             const bannedDevices = snapshot.child('banned_devices').val() || {};
@@ -132,20 +130,7 @@
                 
                 li.oncontextmenu = (e) => {
                     if (isAdmin && name.toUpperCase() !== "TANHU") {
-                        e.preventDefault();
-                        const menu = document.getElementById('admin-context-menu');
-                        menu.style.display = 'block';
-                        menu.style.left = e.pageX + 'px'; menu.style.top = e.pageY + 'px';
-                        
-                        document.getElementById('ctx-ban-btn').onclick = () => {
-                            if (confirm(`${name} banlansın mı?`)) db.ref('banned_devices/' + devId).set({ user: name, date: Date.now() });
-                            menu.style.display = 'none';
-                        };
-
-                        document.getElementById('ctx-del-btn').onclick = () => {
-                            if (confirm(`${name} verileri silinsin mi?`)) db.ref('users/' + name).remove();
-                            menu.style.display = 'none';
-                        };
+                        showContextMenu(e, 'user', {name, devId});
                     }
                 };
                 userListElem.appendChild(li);
@@ -162,28 +147,38 @@
         });
     }
 
-    function unbanDevice(bid) {
-        if (confirm("Ban kaldırılsın mı?")) db.ref('banned_devices/' + bid).remove();
-    }
+    function showContextMenu(e, type, data) {
+        e.preventDefault();
+        const menu = document.getElementById('admin-context-menu');
+        const banBtn = document.getElementById('ctx-ban-btn');
+        const delBtn = document.getElementById('ctx-del-btn');
+        const msgBtn = document.getElementById('ctx-msg-del-btn');
 
-    // BAN KONTROLÜ (DÜZELTİLDİ)
-    function checkBan(name) {
-        if (name.toUpperCase() === "TANHU") {
-            startApp();
-            return;
+        banBtn.style.display = 'none'; delBtn.style.display = 'none'; msgBtn.style.display = 'none';
+
+        if (type === 'user') {
+            banBtn.style.display = 'block'; delBtn.style.display = 'block';
+            banBtn.onclick = () => { if(confirm(`${data.name} BANLANSIN MI?`)) db.ref('banned_devices/'+data.devId).set({user:data.name, date:Date.now()}); menu.style.display='none'; };
+            delBtn.onclick = () => { if(confirm(`${data.name} VERİLERİ SİLİNSİN Mİ?`)) db.ref('users/'+data.name).remove(); menu.style.display='none'; };
+        } else if (type === 'message') {
+            msgBtn.style.display = 'block';
+            msgBtn.onclick = () => { if(confirm("BU MESAJ İMHA EDİLSİN Mİ?")) db.ref(currentRoom+'/'+data.id).remove(); menu.style.display='none'; };
         }
-        db.ref('banned_devices/' + deviceId).once('value', (s) => {
-            if (s.exists()) {
-                document.getElementById('ban-screen').style.display = 'flex';
-            } else {
-                startApp();
-            }
-        });
+
+        menu.style.display = 'block';
+        menu.style.left = e.pageX + 'px'; menu.style.top = e.pageY + 'px';
     }
 
-    if (currentUser) {
-        checkBan(currentUser);
-        checkUserStillExists();
+    function switchChannel(room) {
+        if (room === 'lord' && !isAdmin) { if (prompt("ŞİFRE:") !== "80085") return alert("YETKİSİZ!"); }
+        currentRoom = room;
+        document.getElementById('admin-wallpaper-btn').style.display = (isAdmin && room === 'lord') ? 'block' : 'none';
+        document.querySelectorAll('.channel-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById(`btn-${room}`).classList.add('active');
+        document.getElementById('prompt-label').textContent = `${currentUser.toLowerCase()}@${room}:~$`;
+        document.getElementById('messages').innerHTML = '';
+        db.ref(currentRoom).off();
+        loadMessages();
     }
 
     function startApp() {
@@ -191,47 +186,61 @@
         document.getElementById('ban-screen').style.display = 'none';
         isAdmin = (currentUser.toUpperCase() === "TANHU");
         if (isAdmin) document.getElementById('banned-archive').style.display = 'flex';
-        document.getElementById('prompt-label').textContent = `${currentUser.toLowerCase()}@town:~$`;
         updatePresence(currentUser, 'online');
         listenLists();
         loadMessages();
+        db.ref('settings/lord_wallpaper').on('value', (s) => {
+            document.body.style.backgroundImage = (currentRoom === 'lord' && s.exists()) ? `url(${s.val()})` : "none";
+        });
+    }
+
+    function loadMessages() {
+        db.ref(currentRoom).on("value", (snapshot) => {
+            const msgContainer = document.getElementById('messages');
+            msgContainer.innerHTML = '';
+            const data = snapshot.val();
+            for (let id in data) {
+                const msg = data[id];
+                const div = document.createElement('div');
+                div.className = 'log-line';
+                div.innerHTML = `[${new Date(msg.timestamp).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}] <b style="${msg.gonderen.toUpperCase()==='TANHU' ? 'color:#4ecca3' : ''}">${msg.gonderen}</b>: ${msg.mesaj}`;
+                div.oncontextmenu = (e) => { if (isAdmin) showContextMenu(e, 'message', {id}); };
+                msgContainer.appendChild(div);
+            }
+            msgContainer.scrollTop = msgContainer.scrollHeight;
+        });
     }
 
     function sendMessage() {
         const val = document.getElementById('message-input').value;
         if (val.trim()) {
-            db.ref('lobi').push({ gonderen: currentUser, mesaj: val, timestamp: firebase.database.ServerValue.TIMESTAMP });
+            db.ref(currentRoom).push({ gonderen: currentUser, mesaj: val, timestamp: firebase.database.ServerValue.TIMESTAMP });
             document.getElementById('message-input').value = "";
         }
     }
 
-    function loadMessages() {
-        db.ref('lobi').limitToLast(40).on("child_added", (s) => {
-            const data = s.val();
-            const div = document.createElement('div');
-            div.className = 'log-line';
-            div.innerHTML = `[${new Date(data.timestamp).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}] <b style="${data.gonderen.toUpperCase()==='TANHU' ? 'color:#4ecca3' : ''}">${data.gonderen}</b>: ${data.mesaj}`;
-            document.getElementById('messages').appendChild(div);
-            document.getElementById('messages').scrollTop = document.getElementById('messages').scrollHeight;
+    function checkBan(name) {
+        if (name.toUpperCase() === "TANHU") { startApp(); return; }
+        db.ref('banned_devices/' + deviceId).once('value', (s) => {
+            if (s.exists()) document.getElementById('ban-screen').style.display = 'flex';
+            else startApp();
         });
     }
 
     document.getElementById('username-input').onkeypress = (e) => {
         if (e.key === 'Enter') {
             let name = e.target.value.trim();
-            if (!name) return;
-            if (name.toUpperCase() === "TANHU") {
-                if (prompt("TANHU_KEY:") !== "3169") return alert("ERİŞİM REDDEDİLDİ");
-            }
-            currentUser = name;
-            localStorage.setItem('chatUser', name);
+            if (name.toUpperCase() === "TANHU" && prompt("KEY:") !== "3169") return alert("HATA");
+            currentUser = name; localStorage.setItem('chatUser', name);
             checkBan(name);
         }
     };
 
-    function logout() { updatePresence(currentUser, 'offline'); localStorage.removeItem('chatUser'); location.reload(); }
+    if (currentUser) checkBan(currentUser);
     window.onclick = () => document.getElementById('admin-context-menu').style.display = 'none';
     document.getElementById('message-input').onkeypress = (e) => { if (e.key === 'Enter') sendMessage(); };
+    function logout() { updatePresence(currentUser, 'offline'); localStorage.removeItem('chatUser'); location.reload(); }
+    function unbanDevice(bid) { if (confirm("Ban kaldırılsın mı?")) db.ref('banned_devices/' + bid).remove(); }
 </script>
 </body>
 </html>
