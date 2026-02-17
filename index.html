@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TANHUTOWN v6.1</title>
+    <title>TANHUTOWN v6.2</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     
@@ -11,41 +11,43 @@
         @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&display=swap');
         body { background-color: #050505; color: #00ff41; font-family: 'Fira Code', monospace; margin: 0; display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100vh; overflow: hidden; background-size: cover; background-position: center; transition: background-image 0.8s ease; }
         
-        /* DUYURU BANDI */
         #broadcast-bar { position: fixed; top: 0; left: 0; width: 100%; background: rgba(0, 255, 65, 0.1); border-bottom: 1px solid #00ff41; height: 30px; z-index: 1000; overflow: hidden; display: flex; align-items: center; backdrop-filter: blur(5px); }
         .marquee { white-space: nowrap; animation: marquee 20s linear infinite; padding-left: 100%; font-size: 0.8em; font-weight: bold; }
         @keyframes marquee { 0% { transform: translate(0, 0); } 100% { transform: translate(-100%, 0); } }
 
         #terminal { width: 98vw; max-width: 1100px; height: 85vh; margin-top: 30px; border: 1px solid #00ff41; display: flex; flex-direction: column; background: rgba(13, 13, 13, 0.7); position: relative; z-index: 5; backdrop-filter: blur(10px); }
         #main-content { display: flex; flex: 1; overflow: hidden; }
-        #user-sidebar { width: 240px; border-right: 1px solid #008f11; display: flex; flex-direction: column; }
+        #user-sidebar { width: 240px; border-right: 1px solid #008f11; display: flex; flex-direction: column; background: rgba(0,0,0,0.4); }
         #user-list { flex: 1; overflow-y: auto; padding: 10px; list-style: none; margin: 0; font-size: 0.85em; }
         
-        /* Ban Arşivi */
         #banned-archive { height: 150px; border-top: 1px solid #ff0000; background: rgba(20, 0, 0, 0.4); display: none; flex-direction: column; }
         #archive-header { padding: 8px; font-size: 0.65em; color: #ff0000; font-weight: bold; }
         #banned-list { flex: 1; overflow-y: auto; padding: 5px; list-style: none; margin: 0; font-size: 0.75em; }
         .banned-item { display: flex; justify-content: space-between; color: #ff5555; padding: 3px; border-bottom: 1px solid #330000; }
+        
+        .status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 8px; }
+        .online { background: #00ff41; box-shadow: 0 0 8px #00ff41; }
+        .offline { background: #444; }
 
-        /* Admin Menü */
-        #admin-context-menu { display: none; position: fixed; background: #0d0d0d; border: 1px solid #00ff41; z-index: 2000; width: 200px; box-shadow: 5px 5px 15px black; }
+        #admin-context-menu { display: none; position: fixed; background: #0d0d0d; border: 1px solid #00ff41; z-index: 3000; width: 220px; }
         .context-item { padding: 12px; font-size: 0.75em; cursor: pointer; font-weight: bold; border-bottom: 1px solid #1a1a1a; }
         .item-ban { color: #ff0000; } .item-del { color: #ffaa00; } .item-msg { color: #00ccff; } .item-bcast { color: #00ff41; }
 
-        #messages { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; padding: 10px; }
+        #messages { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; padding: 15px; }
         .log-line { line-height: 1.4; font-size: 0.85em; }
-        .chat-img { max-width: 250px; border: 1px solid #00ff41; margin-top: 5px; }
+        .chat-img { max-width: 250px; border: 1px solid #00ff41; margin-top: 5px; cursor: pointer; }
         #input-line { display: flex; align-items: center; gap: 10px; border-top: 1px solid #008f11; padding: 10px; }
         #message-input { flex: 1; background: transparent; border: none; color: #00ff41; outline: none; font-family: 'Fira Code'; }
-        #send-btn { background: #00ff41; border: none; padding: 8px 20px; font-weight: bold; cursor: pointer; }
+        #send-btn { background: #00ff41; border: none; padding: 8px 20px; font-weight: bold; cursor: pointer; color: black; }
         .channel-btn { padding: 5px 10px; border: 1px solid #00ff41; cursor: pointer; font-size: 0.7em; color: #00ff41; background: transparent; }
         .channel-btn.active { background: #00ff41; color: black; }
-        #login-screen, #ban-screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #000; display: flex; justify-content: center; align-items: center; z-index: 3000; flex-direction: column; }
+        #login-screen, #ban-screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #000; display: flex; justify-content: center; align-items: center; z-index: 4000; flex-direction: column; }
     </style>
 </head>
 <body>
 
-<div id="broadcast-bar"><div class="marquee" id="broadcast-text">YÜKLENİYOR...</div></div>
+<div id="broadcast-bar"><div class="marquee" id="broadcast-text">TANHUTOWN_OS AKTİF...</div></div>
+<div id="overlay"></div>
 
 <div id="admin-context-menu">
     <div class="context-item item-ban" id="btn-ctx-ban" style="display:none;">BİRİMİ MÜHÜRLE</div>
@@ -58,14 +60,14 @@
     <div id="ban-screen"><h1>[ ERİŞİM ENGELLENDİ ]</h1></div>
     <div id="login-screen">
         <div style="border: 1px solid #00ff41; padding: 40px; background: #0d0d0d; text-align: center;">
-            <p>> TANHUTOWN_OS v6.1</p>
+            <p>> TANHUTOWN v6.2</p>
             <input type="text" id="username-input" placeholder="Rumuz..." style="background:transparent; border:none; border-bottom:1px solid #00ff41; color:#00ff41; outline:none; text-align:center;" autofocus>
         </div>
     </div>
 
     <div id="main-content">
         <aside id="user-sidebar">
-            <div style="padding:10px; font-size:0.7em; border-bottom:1px solid #008f11;">> BIRIM_LISTESI</div>
+            <div style="padding:10px; font-size:0.7em; border-bottom:1px solid #008f11; color:#00ff41;">> BIRIM_LISTESI</div>
             <ul id="user-list"></ul>
             <div id="banned-archive">
                 <div id="archive-header">MÜHÜRLÜ_ARŞİV</div>
@@ -106,48 +108,78 @@
     let currentUser = localStorage.getItem('chatUser');
     let isAdmin = false;
 
-    // MENÜ YÖNETİMİ
+    function trackPresence(name) {
+        const userRef = db.ref('users/' + name);
+        userRef.update({ status: 'online', lastDev: deviceId, lastSeen: firebase.database.ServerValue.TIMESTAMP });
+        userRef.onDisconnect().update({ status: 'offline', lastSeen: firebase.database.ServerValue.TIMESTAMP });
+    }
+
+    function listenLists() {
+        db.ref().on('value', snap => {
+            const listContainer = document.getElementById('user-list');
+            const archiveContainer = document.getElementById('banned-list');
+            listContainer.innerHTML = ''; archiveContainer.innerHTML = '';
+            
+            const users = snap.child('users').val() || {};
+            const banned = snap.child('banned_devices').val() || {};
+            
+            for(let name in users) {
+                const uData = users[name];
+                if(banned[uData.lastDev]) continue;
+
+                const li = document.createElement('li');
+                li.style.padding = '8px 5px';
+                const statusClass = uData.status === 'online' ? 'online' : 'offline';
+                li.innerHTML = `<span class="status-dot ${statusClass}"></span> <span>${name}</span>`;
+                
+                li.oncontextmenu = (e) => { if(isAdmin && name.toUpperCase() !== "TANHU") showMenu(e, 'user', {name, dev: uData.lastDev}); };
+                listContainer.appendChild(li);
+            }
+
+            if(isAdmin) {
+                for(let bid in banned) {
+                    const li = document.createElement('li');
+                    li.className = 'banned-item';
+                    li.innerHTML = `<span>${banned[bid].user}</span> <span class="unban-btn" onclick="db.ref('banned_devices/${bid}').remove()">[X]</span>`;
+                    archiveContainer.appendChild(li);
+                }
+            }
+        });
+    }
+
     function showMenu(e, type, data) {
         if(!isAdmin) return;
         e.preventDefault();
         const menu = document.getElementById('admin-context-menu');
-        const items = {
-            ban: document.getElementById('btn-ctx-ban'),
-            del: document.getElementById('btn-ctx-del'),
-            msg: document.getElementById('btn-ctx-msg'),
-            bcast: document.getElementById('btn-ctx-bcast')
-        };
-
-        Object.values(items).forEach(i => i.style.display = 'none');
+        const b = { ban: document.getElementById('btn-ctx-ban'), del: document.getElementById('btn-ctx-del'), msg: document.getElementById('btn-ctx-msg'), bc: document.getElementById('btn-ctx-bcast') };
+        Object.values(b).forEach(i => i.style.display = 'none');
 
         if(type === 'user') {
-            items.ban.style.display = 'block'; items.del.style.display = 'block';
-            items.ban.onclick = () => { if(confirm("BAN?")) db.ref('banned_devices/'+data.dev).set({user:data.name}); };
-            items.del.onclick = () => { if(confirm("SİL?")) db.ref('users/'+data.name).remove(); };
+            b.ban.style.display = 'block'; b.del.style.display = 'block';
+            b.ban.onclick = () => { if(confirm("BAN?")) db.ref('banned_devices/'+data.dev).set({user:data.name}); menu.style.display='none'; };
+            b.del.onclick = () => { if(confirm("SİL?")) db.ref('users/'+data.name).remove(); menu.style.display='none'; };
         } else if(type === 'msg') {
-            items.msg.style.display = 'block';
-            items.msg.onclick = () => { if(confirm("İMHA?")) db.ref(currentRoom+'/'+data.id).remove(); };
+            b.msg.style.display = 'block';
+            b.msg.onclick = () => { if(confirm("İMHA?")) db.ref(currentRoom+'/'+data.id).remove(); menu.style.display='none'; };
         } else if(type === 'bcast') {
-            items.bcast.style.display = 'block';
-            items.bcast.onclick = () => { 
-                let n = prompt("YENİ DUYURU:");
-                if(n) db.ref('settings/broadcast').set(n.toUpperCase());
-            };
+            b.bc.style.display = 'block';
+            b.bc.onclick = () => { let n = prompt("DUYURU:"); if(n) db.ref('settings/broadcast').set(n.toUpperCase()); menu.style.display='none'; };
         }
 
         menu.style.display = 'block';
         menu.style.left = e.pageX + 'px'; menu.style.top = e.pageY + 'px';
     }
 
-    // BROADCAST DİNLE
-    db.ref('settings/broadcast').on('value', s => { if(s.exists()) document.getElementById('broadcast-text').textContent = s.val(); });
     document.getElementById('broadcast-bar').oncontextmenu = (e) => showMenu(e, 'bcast');
+    db.ref('settings/broadcast').on('value', s => { if(s.exists()) document.getElementById('broadcast-text').textContent = s.val(); });
 
     function checkBan(name) {
         if(name.toUpperCase() === "TANHU") return startApp();
         db.ref('banned_devices/'+deviceId).once('value', s => {
-            if(s.exists()) document.getElementById('ban-screen').style.display = 'flex';
-            else startApp();
+            if(s.exists()) {
+                document.getElementById('ban-screen').style.display = 'flex';
+                document.getElementById('login-screen').style.display = 'none';
+            } else startApp();
         });
     }
 
@@ -157,36 +189,8 @@
         isAdmin = (currentUser.toUpperCase() === "TANHU");
         if(isAdmin) document.getElementById('banned-archive').style.display = 'flex';
         document.getElementById('prompt-label').textContent = `${currentUser.toLowerCase()}@town:~$`;
-        db.ref('users/'+currentUser).update({status:'online', lastDev:deviceId});
-        db.ref('users/'+currentUser).onDisconnect().update({status:'offline'});
+        trackPresence(currentUser);
         listenLists(); loadMessages(); listenWallpaper();
-    }
-
-    function listenLists() {
-        db.ref().on('value', snap => {
-            const list = document.getElementById('user-list');
-            const archive = document.getElementById('banned-list');
-            list.innerHTML = ''; archive.innerHTML = '';
-            const users = snap.child('users').val() || {};
-            const banned = snap.child('banned_devices').val() || {};
-            for(let name in users) {
-                const dev = users[name].lastDev;
-                if(banned[dev]) continue;
-                const li = document.createElement('li');
-                li.style.padding = '5px';
-                li.innerHTML = `<span class="status-dot ${users[name].status==='online'?'online':'offline'}"></span> ${name}`;
-                li.oncontextmenu = (e) => showMenu(e, 'user', {name, dev});
-                list.appendChild(li);
-            }
-            if(isAdmin) {
-                for(let bid in banned) {
-                    const li = document.createElement('li');
-                    li.className = 'banned-item';
-                    li.innerHTML = `<span>${banned[bid].user}</span> <span class="unban-btn" onclick="db.ref('banned_devices/${bid}').remove()">[X]</span>`;
-                    archive.appendChild(li);
-                }
-            }
-        });
     }
 
     function loadMessages() {
@@ -199,10 +203,10 @@
                 const div = document.createElement('div');
                 div.className = 'log-line';
                 let html = `[${new Date(m.timestamp).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}] <b style="${m.gonderen.toUpperCase()==='TANHU'?'color:#4ecca3':''}">${m.gonderen}</b>: `;
-                if(m.foto) html += `<br><img src="${m.foto}" class="chat-img">`;
+                if(m.foto) html += `<br><img src="${m.foto}" class="chat-img" onclick="window.open(this.src)">`;
                 else html += `<span>${m.mesaj}</span>`;
                 div.innerHTML = html;
-                div.oncontextmenu = (e) => showMenu(e, 'msg', {id});
+                div.oncontextmenu = (e) => { if(isAdmin) { e.preventDefault(); showMenu(e, 'msg', {id}); } };
                 container.appendChild(div);
             }
             container.scrollTop = container.scrollHeight;
@@ -241,6 +245,7 @@
     document.getElementById('username-input').onkeypress = (e) => {
         if(e.key === 'Enter') {
             let n = e.target.value.trim();
+            if(!n) return;
             if(n.toUpperCase()==="TANHU" && prompt("KEY:")!=="3169") return;
             currentUser = n; localStorage.setItem('chatUser', n); checkBan(n);
         }
