@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TANHUTOWN v6.8</title>
+    <title>TANHUTOWN v6.9</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     
@@ -41,7 +41,7 @@
 </head>
 <body>
 
-<div id="broadcast-bar"><div class="marquee" id="broadcast-text">TANHUTOWN v6.8: TAM TEMİZLİK MODU AKTİF...</div></div>
+<div id="broadcast-bar"><div class="marquee" id="broadcast-text">TANHUTOWN v6.9: FISILTI ODALARI SENKRONİZE EDİLDİ...</div></div>
 
 <div id="admin-context-menu">
     <div class="context-item item-ban" id="btn-ctx-ban">BİRİMİ MÜHÜRLE</div>
@@ -55,7 +55,7 @@
     <div id="ban-screen"><h1>[ ERİŞİM ENGELLENDİ ]</h1></div>
     <div id="login-screen">
         <div style="border: 1px solid #00ff41; padding: 40px; background: #0d0d0d; text-align: center;">
-            <p>> TANHUTOWN v6.8</p>
+            <p>> TANHUTOWN v6.9</p>
             <input type="text" id="username-input" placeholder="Rumuz..." style="background:transparent; border:none; border-bottom:1px solid #00ff41; color:#00ff41; outline:none; text-align:center;" autocomplete="off">
         </div>
     </div>
@@ -112,28 +112,16 @@
 
     function processLogin(name) {
         if (!name) return;
-        // NORMALİZASYON: Tüm girişler büyük harf
         const cleanName = name.trim().toUpperCase();
-        
         if (cleanName === "TANHU") {
             const key = prompt("TANHU_KEY:");
-            if (key === "3169") { 
-                currentUser = "TANHU"; 
-                localStorage.setItem('chatUser', "TANHU"); 
-                startApp(); 
-            } else { alert("ERİŞİM REDDEDİLDİ."); }
+            if (key === "3169") { currentUser = "TANHU"; localStorage.setItem('chatUser', "TANHU"); startApp(); }
+            else { alert("ERİŞİM REDDEDİLDİ."); }
             return;
         }
-
         db.ref('banned_devices/' + deviceId).once('value', snap => {
-            if (snap.exists()) { 
-                document.getElementById('ban-screen').style.display = 'flex'; 
-                document.getElementById('login-screen').style.display = 'none'; 
-            } else { 
-                currentUser = cleanName; 
-                localStorage.setItem('chatUser', cleanName); 
-                startApp(); 
-            }
+            if (snap.exists()) { document.getElementById('ban-screen').style.display = 'flex'; document.getElementById('login-screen').style.display = 'none'; }
+            else { currentUser = cleanName; localStorage.setItem('chatUser', cleanName); startApp(); }
         });
     }
 
@@ -141,7 +129,6 @@
         document.getElementById('login-screen').style.display = 'none';
         document.getElementById('ban-screen').style.display = 'none';
         isAdmin = (currentUser === "TANHU");
-        
         if (isAdmin) {
             document.getElementById('banned-archive').style.display = 'flex';
             document.getElementById('overseer-panel').style.display = 'block';
@@ -151,10 +138,11 @@
         userRef.update({ status: 'online', lastDev: deviceId });
         userRef.onDisconnect().update({ status: 'offline' });
 
+        // ÖZEL DAVET DİNLEME VE ODA AKTİVASYONU
         db.ref('users/' + currentUser + '/invites').on('value', snap => {
             const inv = snap.val();
             if (inv && inv.from !== currentUser) {
-                if (confirm(inv.from + " seni arka odaya çağırıyor. Gidilsin mi?")) {
+                if (confirm(inv.from + " seninle özel konuşmak istiyor. Arka odaya geçilsin mi?")) {
                     currentPrivateRoom = inv.room;
                     document.getElementById('nav-private').style.display = 'block';
                     switchRoom(inv.room);
@@ -163,6 +151,7 @@
             }
         });
 
+        // LORD İÇİN TÜM ODALARI DİNLE
         if (isAdmin) {
             db.ref('active_private_rooms').on('value', snap => {
                 const list = document.getElementById('active-rooms-list');
@@ -178,7 +167,7 @@
                     const del = document.createElement('span');
                     del.className = 'room-del-btn';
                     del.textContent = '×';
-                    del.onclick = (e) => { e.stopPropagation(); if(confirm("Odayı sil?")) { db.ref('active_private_rooms/'+r).remove(); db.ref(r).remove(); } };
+                    del.onclick = (e) => { e.stopPropagation(); if(confirm("Odayı ve mesajları imha et?")) { db.ref('active_private_rooms/'+r).remove(); db.ref(r).remove(); } };
                     item.appendChild(link); item.appendChild(del);
                     list.appendChild(item);
                 }
@@ -191,17 +180,18 @@
     function listenLists() {
         db.ref().on('value', snap => {
             const listContainer = document.getElementById('user-list');
-            const archiveContainer = document.getElementById('banned-list');
-            listContainer.innerHTML = ''; archiveContainer.innerHTML = '';
+            listContainer.innerHTML = '';
             const users = snap.child('users').val() || {};
             const banned = snap.child('banned_devices').val() || {};
+            const archiveContainer = document.getElementById('banned-list');
+            archiveContainer.innerHTML = '';
+            
             for(let name in users) {
                 const uData = users[name];
                 if(banned[uData.lastDev]) continue;
                 const li = document.createElement('li');
                 li.style.padding = '8px 5px';
                 li.innerHTML = `<span class="status-dot ${uData.status==='online'?'online':'offline'}"></span> <span>${name}</span>`;
-                // KISITLAMA KALKTI: Her isme sağ tık yapılabilir
                 li.oncontextmenu = (e) => showMenu(e, 'user', {name, dev: uData.lastDev});
                 listContainer.appendChild(li);
             }
@@ -217,33 +207,39 @@
     }
 
     function showMenu(e, type, data) {
-        if(!isAdmin) return;
+        // MENÜ HERKESE AÇIK (AMACINA GÖRE)
         e.preventDefault();
         const menu = document.getElementById('admin-context-menu');
         const b = { ban: document.getElementById('btn-ctx-ban'), del: document.getElementById('btn-ctx-del'), msg: document.getElementById('btn-ctx-msg'), bc: document.getElementById('btn-ctx-bcast'), priv: document.getElementById('btn-ctx-private') };
         Object.values(b).forEach(i => i.style.display = 'none');
 
         if(type === 'user') {
-            b.ban.style.display = 'block'; b.del.style.display = 'block';
-            b.ban.onclick = () => { if(confirm(data.name + " BAN?")) db.ref('banned_devices/'+data.dev).set({user:data.name}); menu.style.display='none'; };
-            b.del.onclick = () => { if(confirm(data.name + " VERİLERİ SİLİNSİN Mİ?")) db.ref('users/'+data.name).remove(); menu.style.display='none'; };
-            
+            // Admin Yetkileri
+            if (isAdmin && data.dev !== deviceId) {
+                b.ban.style.display = 'block'; b.del.style.display = 'block';
+                b.ban.onclick = () => { if(confirm("BAN?")) db.ref('banned_devices/'+data.dev).set({user:data.name}); menu.style.display='none'; };
+                b.del.onclick = () => { if(confirm("VERİLERİ SİLİNSİN Mİ?")) db.ref('users/'+data.name).remove(); menu.style.display='none'; };
+            }
+            // Herkes İçin Özel Oda Daveti
             if (data.name !== currentUser) {
                 b.priv.style.display = 'block';
                 b.priv.onclick = () => {
                     const roomID = "private_" + [currentUser, data.name].sort().join("_");
+                    // 1. Karşı tarafa davet at
                     db.ref('users/' + data.name + '/invites').set({ from: currentUser, room: roomID });
+                    // 2. Odayı aktif listeye ekle (Hemen görünmesi için)
                     db.ref('active_private_rooms/' + roomID).set(true);
+                    // 3. Daveti gönderene odayı aç
                     currentPrivateRoom = roomID;
                     document.getElementById('nav-private').style.display = 'block';
                     switchRoom(roomID);
                     menu.style.display='none';
                 };
             }
-        } else if(type === 'msg') {
+        } else if(type === 'msg' && isAdmin) {
             b.msg.style.display = 'block';
             b.msg.onclick = () => { if(confirm("İMHA?")) db.ref(currentRoom+'/'+data.id).remove(); menu.style.display='none'; };
-        } else if(type === 'bcast') {
+        } else if(type === 'bcast' && isAdmin) {
             b.bc.style.display = 'block';
             b.bc.onclick = () => { let n = prompt("DUYURU:"); if(n) db.ref('settings/broadcast').set(n.toUpperCase()); menu.style.display='none'; };
         }
@@ -256,7 +252,7 @@
         currentRoom = room;
         document.getElementById('btn-set-bg').style.display = (isAdmin && room==='lord') ? 'block' : 'none';
         document.querySelectorAll('.channel-btn').forEach(b => b.classList.remove('active'));
-        if(room === currentPrivateRoom) document.getElementById('nav-private').style.display = 'block', document.getElementById('nav-private').classList.add('active');
+        if(room === currentPrivateRoom) document.getElementById('nav-private').classList.add('active');
         else if(document.getElementById('nav-'+room)) document.getElementById('nav-'+room).classList.add('active');
         loadMessages(); listenWallpaper();
     }
@@ -266,12 +262,20 @@
             const container = document.getElementById('messages');
             container.innerHTML = '';
             const data = snap.val();
-            if(!data && currentRoom.includes('private')) { switchRoom('lobi'); return; }
+            // Oda silinirse kullanıcıları lobiye at
+            if(!data && currentRoom.includes('private')) { 
+                currentPrivateRoom = null;
+                document.getElementById('nav-private').style.display = 'none';
+                switchRoom('lobi'); 
+                return; 
+            }
             for(let id in data) {
+                if(id === "active") continue;
                 const m = data[id];
+                if(!m.gonderen) continue;
                 const div = document.createElement('div');
                 div.className = 'log-line';
-                let html = `[${new Date(m.timestamp).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}] <b style="${m.gonderen.toUpperCase()==='TANHU'?'color:#4ecca3':''}">${m.gonderen}</b>: `;
+                let html = `[${new Date(m.timestamp).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}] <b style="${m.gonderen==='TANHU'?'color:#4ecca3':''}">${m.gonderen}</b>: `;
                 if(m.foto) html += `<br><img src="${m.foto}" class="chat-img" onclick="window.open(this.src)">`;
                 else html += `<span>${m.mesaj}</span>`;
                 div.innerHTML = html;
